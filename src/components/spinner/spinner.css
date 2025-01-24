@@ -1,0 +1,9 @@
+.spinner {
+  shape-rendering: auto;
+  display: block;
+  background: rgb(255, 255, 255);
+}
+
+.spinnerTransform {
+  transform: rotate(0 50 50);
+}/*# sourceMappingURL=spinner.css.map */
