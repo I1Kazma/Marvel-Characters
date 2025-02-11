@@ -1,89 +1,59 @@
-import { Component } from 'react';
-import propTypes from 'prop-types';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import Spinner from '../spinner/spinner';
 import ErrorMessage from '../errorMessage/errorMessage';
 import Skeleton from '../skeleton/Skeleton';
 
 import './charInfo.scss';
 
-class CharInfo extends Component {
-    state = {
-        char: null,
-        loading: false,
-        error: false
-    };
+const CharInfo = (props) => {
 
+    const [char, setChar] = useState(null);
 
+    const { loading, error, getCharacter, clearError } = useMarvelService();
 
-    marvelService = new MarvelService();
+    useEffect(() => {
+        updateChar()
+    }, [props.charId])
 
-    updateChar = () => {
-        const { charId } = this.props;
+    const updateChar = () => {
+        const { charId } = props;
         if (!charId) {
             return;
         }
 
-        this.onCharLoading()
-
-        this.marvelService
-            .getCharacter(charId)
-            .then(this.onCharLoaded)
-            .catch(this.onError);
+        clearError();
+        getCharacter(charId)
+            .then(onCharLoaded)
     }
 
-    componentDidMount() {
-        this.updateChar();
+    const onCharLoaded = (char) => {
+        setChar(char);
     }
 
-    componentDidUpdate(prevProps, prevState) {
-        if (this.props.charId !== prevProps.charId) {
-            this.updateChar();
-        }
-    }
-    componentWillUnmount() {
+    const skeleton = char || loading || error ? null : <Skeleton />;
+    const errorMessage = error ? <ErrorMessage /> : null;
+    const spinner = loading ? <Spinner /> : null;
+    const content = !(loading || error || !char) ? <View char={char} /> : null;
 
-    }
-
-    onCharLoaded = (char) => {
-        this.setState({ char, loading: false })
-    }
-
-    onCharLoading = (char) => {
-        this.setState({ loading: true })
-    }
-
-    onError = () => {
-        this.setState({ loading: false, error: true })
-    }
-
-    render() {
-        const { char, loading, error } = this.state
-        const errorMessage = error ? <ErrorMessage /> : null
-        const spinner = loading ? <Spinner /> : null
-        const skeleton = char || loading || error ? null : <Skeleton />
-        const content = !(loading || error || !char) ? <View char={char} /> : null
-
-        return (
-            <div className="char__info" >
-                {skeleton}
-                {errorMessage}
-                {spinner}
-                {content}
-            </div>
-        )
-    }
+    return (
+        <div className="char__info">
+            {skeleton}
+            {errorMessage}
+            {spinner}
+            {content}
+        </div>
+    )
 }
 
 const View = ({ char }) => {
-
     const { name, description, thumbnail, homepage, wiki, comics } = char;
 
-    let imgStyle = {}
-
-    if (thumbnail.includes("image_not_available")) {
-        imgStyle = { 'objectFit': 'contain' }
+    let imgStyle = { 'objectFit': 'cover' };
+    if (thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
+        imgStyle = { 'objectFit': 'contain' };
     }
 
     return (
@@ -107,10 +77,11 @@ const View = ({ char }) => {
             </div>
             <div className="char__comics">Comics:</div>
             <ul className="char__comics-list">
-                {comics.length > 0 ? null : 'No comics found'}
+                {comics.length > 0 ? null : 'There is no comics with this character'}
                 {
                     comics.map((item, i) => {
-                        if (i > 10) return
+                        // eslint-disable-next-line
+                        if (i > 9) return;
                         return (
                             <li key={i} className="char__comics-item">
                                 {item.name}
@@ -118,14 +89,13 @@ const View = ({ char }) => {
                         )
                     })
                 }
-
             </ul>
         </>
     )
 }
 
 CharInfo.propTypes = {
-    charId: propTypes.number
+    charId: PropTypes.number
 }
 
 export default CharInfo;
